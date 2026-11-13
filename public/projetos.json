@@ -1,0 +1,23 @@
+[
+  {
+    "id": "jmeuren",
+    "nome": "JMeuren Arquitetura",
+    "dominio": "jmeurenarquitetura.com.br",
+    "url": "https://jmeurenarquitetura.com.br",
+    "categoria": "Site Institucional & Portfólio",
+    "descricao": "Arquitetura residencial, comercial e interiores com apresentação visual de projetos e captação de clientes.",
+    "imagem": "/m/proj-jmeuren.jpg",
+    "ativo": true
+  },
+  {
+    "id": "faixapro",
+    "nome": "FaixaPro",
+    "dominio": "faixapro.com.br",
+    "url": "https://faixapro.com.br",
+    "categoria": "SaaS & Landing Page",
+    "descricao": "Sistema SaaS multi-tenant e landing page de alta conversão para gestão inteligente de academias de artes marciais.",
+    "imagem": "/m/proj-faixapro.jpg",
+    "ativo": true
+  }
+]
+
