@@ -1,0 +1,10 @@
+# Site da Sync Soluções — Cloudflare Pages
+name = "sync-solucoes"
+pages_build_output_dir = "public"
+compatibility_date = "2024-09-23"
+
+# Armazenamento dos projetos da área admin.
+# Troque o id pelo do namespace KV criado no painel da Cloudflare (veja o LEIA-ME.md).
+[[kv_namespaces]]
+binding = "PROJECTS"
+id = "COLOQUE_AQUI_O_ID_DO_KV"

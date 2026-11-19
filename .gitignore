@@ -1,5 +1,8 @@
-node_modules
-.next
-out
-*.tsbuildinfo
-next-env.d.ts
+# Cloudflare Pages / Wrangler
+.wrangler/
+.dev.vars
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+*.log
