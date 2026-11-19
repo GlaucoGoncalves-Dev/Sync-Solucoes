@@ -57,6 +57,7 @@ npx wrangler pages secret put SESSION_SECRET
 3. A imagem de capa é reduzida no navegador antes do envio (até 1600 px). Prints de 16:10 ficam melhores.
 4. A **ordem** define a posição no site: o menor número aparece primeiro.
 5. As alterações aparecem no site em até 1 minuto (cache).
+6. **Troca de senha pelo cliente:** O cliente pode alterar a própria senha a qualquer momento clicando no botão **"Trocar senha"** no topo da área admin. A nova senha é armazenada de forma segura e criptografada (hash com salt) no KV. Se o cliente esquecer a senha, o administrador pode resetá-la a qualquer momento pela Cloudflare.
 
 Os dois projetos atuais (J.Meuren e FaixaPro) já aparecem cadastrados no primeiro acesso. Se todos os projetos forem despublicados ou excluídos, a seção "Projetos" some do site.
 

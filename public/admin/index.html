@@ -220,6 +220,7 @@ dialog .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
     </span>
     <nav>
       <a class="btn ghost vs" id="siteLink" href="/#projetos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span>Ver site</span></a>
+      <button class="btn ghost" id="changePwBtn" type="button" title="Alterar senha de acesso"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Trocar senha</span></button>
       <button class="btn" id="logout" type="button">Sair</button>
     </nav>
   </header>
@@ -293,6 +294,33 @@ dialog .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
   <h2 id="cTitle">Excluir projeto?</h2>
   <p id="cText"></p>
   <div class="acts"><button class="btn" type="button" id="cNo">Manter</button><button class="btn danger" type="button" id="cYes">Excluir projeto</button></div>
+</dialog>
+
+<dialog id="pwDialog" aria-labelledby="pwTitle">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px">
+    <h2 id="pwTitle" style="font-size:19px;font-family:var(--f-display)">Alterar senha</h2>
+    <button class="btn icon ghost" type="button" id="pwClose" aria-label="Fechar" style="padding:4px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <form id="pwForm" novalidate style="display:grid;gap:14px">
+    <div class="field">
+      <label for="currPw">Senha atual <span class="req">*</span></label>
+      <input id="currPw" type="password" required autocomplete="current-password">
+    </div>
+    <div class="field">
+      <label for="newPw">Nova senha <span class="req">*</span></label>
+      <input id="newPw" type="password" minlength="6" required autocomplete="new-password">
+      <small>Mínimo de 6 caracteres.</small>
+    </div>
+    <div class="field">
+      <label for="confPw">Confirmar nova senha <span class="req">*</span></label>
+      <input id="confPw" type="password" minlength="6" required autocomplete="new-password">
+    </div>
+    <p class="err" id="pwErr" role="alert" style="color:var(--danger);font-size:14px;min-height:1.2em;margin:0"></p>
+    <div class="acts" style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+      <button class="btn" type="button" id="pwCancel">Cancelar</button>
+      <button class="btn primary" type="submit" id="pwSubmit">Salvar nova senha</button>
+    </div>
+  </form>
 </dialog>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
@@ -421,6 +449,32 @@ $('#loginForm').addEventListener('submit',async e=>{
   catch(err){$('#loginErr').textContent=err.message}finally{b.disabled=false;b.textContent='Entrar'}
 });
 $('#logout').addEventListener('click',async()=>{try{await api('/api/session',{method:'DELETE'})}catch(e){}showLogin('Você saiu.')});
+
+/* ---- alterar senha ---- */
+const pwDialog=$('#pwDialog');
+$('#changePwBtn')?.addEventListener('click',()=>{
+  $('#currPw').value='';$('#newPw').value='';$('#confPw').value='';$('#pwErr').textContent='';
+  pwDialog.showModal();$('#currPw').focus();
+});
+$('#pwClose')?.addEventListener('click',()=>pwDialog.close());
+$('#pwCancel')?.addEventListener('click',()=>pwDialog.close());
+$('#pwForm')?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const curr=$('#currPw').value,next=$('#newPw').value,conf=$('#confPw').value,err=$('#pwErr');
+  err.textContent='';
+  if(!curr){err.textContent='Digite a senha atual.';$('#currPw').focus();return}
+  if(!next||next.length<6){err.textContent='A nova senha deve ter no mínimo 6 caracteres.';$('#newPw').focus();return}
+  if(next!==conf){err.textContent='A confirmação de senha não confere.';$('#confPw').focus();return}
+  const btn=$('#pwSubmit');btn.disabled=true;btn.textContent='Salvando…';
+  try{
+    await api('/api/session',{method:'PUT',body:JSON.stringify({currentPassword:curr,newPassword:next})});
+    pwDialog.close();toast('Senha alterada com sucesso!');
+  }catch(ex){
+    if(ex.message!=='auth')err.textContent=ex.message;
+  }finally{
+    btn.disabled=false;btn.textContent='Salvar nova senha';
+  }
+});
 
 (async()=>{try{const s=await api('/api/session');s.authed?await showWork():showLogin()}catch(e){showLogin('Não foi possível falar com o servidor. Confira se o site foi publicado na Cloudflare com as Functions.')}})();
 </script>

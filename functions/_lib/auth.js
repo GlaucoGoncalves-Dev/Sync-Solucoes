@@ -23,6 +23,42 @@ export function safeEqual(a, b) {
   return diff === 0;
 }
 
+// Hash e verificação da senha do admin (com suporte a alteração salva no KV).
+export async function hashPassword(password, salt) {
+  if (!salt) {
+    const saltBytes = new Uint8Array(16);
+    crypto.getRandomValues(saltBytes);
+    salt = Array.from(saltBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  const data = enc.encode(`${salt}:${password}`);
+  const hashBuf = await crypto.subtle.digest('SHA-256', data);
+  const hash = Array.from(new Uint8Array(hashBuf), (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${salt}:${hash}`;
+}
+
+export async function verifyPassword(password, env) {
+  let stored = null;
+  if (env.PROJECTS) {
+    try {
+      stored = await env.PROJECTS.get('admin:password_hash');
+    } catch {}
+  }
+  if (stored) {
+    const [salt, expectedHash] = stored.split(':');
+    if (salt && expectedHash) {
+      const computed = await hashPassword(password, salt);
+      return safeEqual(computed, stored);
+    }
+  }
+  return safeEqual(password || '', env.ADMIN_PASSWORD || '');
+}
+
+export async function setPassword(newPassword, env) {
+  if (!env.PROJECTS) throw new Error('Armazenamento KV não conectado.');
+  const hashed = await hashPassword(newPassword);
+  await env.PROJECTS.put('admin:password_hash', hashed);
+}
+
 function secretOf(env) {
   if (!env.SESSION_SECRET || !env.ADMIN_PASSWORD) throw new Error('missing-secrets');
   return env.SESSION_SECRET;
