@@ -57,6 +57,8 @@ export async function setPassword(newPassword, env) {
   if (!env.PROJECTS) throw new Error('Armazenamento KV não conectado.');
   const hashed = await hashPassword(newPassword);
   await env.PROJECTS.put('admin:password_hash', hashed);
+  // Invalida imediatamente todas as sessões ativas anteriores
+  await env.PROJECTS.put('admin:session_version', Date.now().toString());
 }
 
 function secretOf(env) {
@@ -65,7 +67,14 @@ function secretOf(env) {
 }
 
 export async function createSession(env) {
-  const payload = b64uText(JSON.stringify({ exp: Date.now() + SESSION_HOURS * 3600e3 }));
+  let ver = 0;
+  if (env.PROJECTS) {
+    try {
+      const v = await env.PROJECTS.get('admin:session_version');
+      if (v) ver = Number(v) || 0;
+    } catch {}
+  }
+  const payload = b64uText(JSON.stringify({ exp: Date.now() + SESSION_HOURS * 3600e3, ver }));
   const sig = await hmac(secretOf(env), payload);
   return `${payload}.${sig}`;
 }
@@ -77,8 +86,16 @@ export async function isAuthed(request, env) {
     const [payload, sig] = raw.slice(COOKIE.length + 1).split('.');
     if (!payload || !sig) return false;
     if (!safeEqual(sig, await hmac(secretOf(env), payload))) return false;
-    const { exp } = JSON.parse(fromB64u(payload));
-    return typeof exp === 'number' && exp > Date.now();
+    const { exp, ver } = JSON.parse(fromB64u(payload));
+    if (typeof exp !== 'number' || exp <= Date.now()) return false;
+    if (env.PROJECTS) {
+      const currentVerStr = await env.PROJECTS.get('admin:session_version');
+      if (currentVerStr) {
+        const currentVer = Number(currentVerStr) || 0;
+        if ((ver || 0) < currentVer) return false; // Sessão revogada após troca de senha
+      }
+    }
+    return true;
   } catch {
     return false;
   }

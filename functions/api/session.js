@@ -9,13 +9,39 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   if (!env.ADMIN_PASSWORD || !env.SESSION_SECRET) return json({ error: 'Faltam as variáveis ADMIN_PASSWORD e SESSION_SECRET na Cloudflare.' }, 500);
   if (!sameOrigin(request)) return json({ error: 'Origem não permitida.' }, 403);
+
+  // Rate limiting contra força bruta por IP (máximo 5 tentativas erradas em 5 minutos)
+  const clientIp = request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || 'ip';
+  const rateLimitKey = `ratelimit:login:${clientIp}`;
+  let attempts = 0;
+  if (env.PROJECTS) {
+    try {
+      const stored = await env.PROJECTS.get(rateLimitKey);
+      attempts = Number(stored) || 0;
+      if (attempts >= 5) {
+        return json({ error: 'Muitas tentativas incorretas. Aguarde 5 minutos.' }, 429);
+      }
+    } catch {}
+  }
+
   let body = {};
   try { body = await request.json(); } catch {}
   const valid = await verifyPassword(body.password, env);
   if (!valid) {
+    if (env.PROJECTS) {
+      try {
+        await env.PROJECTS.put(rateLimitKey, String(attempts + 1), { expirationTtl: 300 });
+      } catch {}
+    }
     await new Promise((r) => setTimeout(r, 900)); // atrasa tentativas erradas
     return json({ error: 'Senha incorreta.' }, 401);
   }
+
+  // Sucesso: reseta o contador de tentativas
+  if (attempts > 0 && env.PROJECTS) {
+    try { await env.PROJECTS.delete(rateLimitKey); } catch {}
+  }
+
   const token = await createSession(env);
   return json({ ok: true }, 200, { 'Set-Cookie': sessionCookie(token, request) });
 }

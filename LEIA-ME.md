@@ -72,8 +72,11 @@ Depois abra http://localhost:8788 e http://localhost:8788/admin.
 ## Segurança
 
 - A senha nunca fica no código. Ela vive só nas variáveis secretas da Cloudflare.
-- O login cria uma sessão de 12 horas num cookie protegido (`HttpOnly`, `SameSite=Strict`, `Secure`).
+- O login cria uma sessão num cookie protegido (`HttpOnly`, `SameSite=Strict`, `Secure`).
+- **Invalidação de sessão:** Ao alterar a senha, todas as sessões anteriores são revogadas instantaneamente em todos os dispositivos.
+- **Rate Limiting:** Bloqueio automático por IP após 5 tentativas consecutivas de senha incorreta (com TTL de 5 minutos).
+- **Proteção contra Clickjacking e XSS:** Cabeçalhos de segurança definidos em `public/_headers` (`Content-Security-Policy`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`).
+- **Validação de Uploads:** Inspeção estrita dos *magic bytes* para garantir que arquivos enviados são imagens JPG, PNG ou WebP válidas.
 - Toda alteração exige a sessão e só é aceita quando vem do próprio site.
-- Tentativas de senha errada demoram cerca de 1 segundo para responder.
 - Para mais proteção, dá para colocar o `/admin` atrás do **Cloudflare Access** (Zero Trust), que é gratuito para poucos usuários.
 - Não envie o arquivo `.dev.vars` para o GitHub.
