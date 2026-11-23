@@ -2,7 +2,18 @@
 .wrangler/
 .dev.vars
 
+# brutos pesados e reservas (ficam no zip de backup local)
+producao/
+teste-fase1/
+
+# ferramentas locais
+.agents/
+.claude/
+skills-lock.json
+*.zip
+
 # Sistema operacional
 .DS_Store
 Thumbs.db
+desktop.ini
 *.log
